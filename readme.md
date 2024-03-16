@@ -46,8 +46,13 @@ Jarvis is a Python-based application that acts as a virtual assistant capable of
 
 ### Weather Forecast
 
-- Command: `Weather [city name]` or `What's the weather in [city name]`
+- Command: `Weather [city name]` or `What's the weather in [city name]?`
 - Description: Fetches the current weather forecast for the specified city using the OpenWeatherMap API. Jarvis provides information on temperature, humidity, and wind speed for the given city.
+
+## Calendar
+
+- Command: `Calendar` or `What's my next calendar event?`
+- Description: Fetches the next event of your internet calendar.
 
 ## Disclaimer
 

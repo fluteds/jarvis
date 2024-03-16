@@ -3,8 +3,7 @@ import speech_recognition as sr
 import random
 import winsound
 from datetime import datetime
-
-from config import BOTNAME, USERNAME
+import time
 
 # Import individual command functions
 from commands.wikipedia import search_wikipedia
@@ -13,12 +12,14 @@ from commands.youtube import search_youtube
 from commands.music import play_song
 from commands.website import open_website
 from commands.weather import get_weather
+from commands.calendar import fetch_calendar_events, get_next_event
+
+from config import USERNAME
 
 # Initialize the speech engine
 engine = pyttsx3.init()
 voices = engine.getProperty('voices')
 engine.setProperty('voice', voices[1].id)  # Set the voice to a female one
-
 
 # List of random greetings
 def get_greeting():
@@ -49,6 +50,15 @@ def get_random_success_message():
     ]
     return random.choice(messages)
 
+def get_random_goodbye_message():
+    goodbye_messages = [
+        "No worries. I'll be here if you need me.",
+        "Alright. Feel free to ask if you need anything else.",
+        "Sure thing. Let me know if you require any further assistance.",
+        "Okay. Don't hesitate to reach out if you need help later.",
+    ]
+    return random.choice(goodbye_messages)
+
 # Function to convert text to speech
 def speak(text):
     engine.say(text)
@@ -65,11 +75,11 @@ def take_command():
     with sr.Microphone() as source:
         print("Listening...")
         r.adjust_for_ambient_noise(source)
-        audio = r.listen(source)
+        audio = r.listen(source)  # Listen indefinitely without a time limit
         try:
-            command = r.recognize_google(audio).lower()
+            command = r.recognize_google(audio, language="en-US", show_all=False)
             print("User said:", command)
-            return command
+            return command.lower()
         except sr.UnknownValueError:
             print("Sorry, I didn't get that.")
             return ""
@@ -77,8 +87,11 @@ def take_command():
             print("Sorry, my speech service is down. Please try again later.")
             return ""
 
-# Select a random greeting
+
+# Start with a greeting
 random_greeting = get_random_greeting()
+speak("I am JARVIS. Your personal assistant.")
+speak("Please leave a few seconds after the following message for me to start taking your questions.")
 speak(f"{random_greeting}")
 
 # Main loop for continuous interaction
@@ -114,6 +127,34 @@ while True:
             weather_report = get_weather(city)
             speak(weather_report)
             speak(get_random_success_message())
+        elif 'calendar' in command:
+            calendar_data = fetch_calendar_events()
+            if calendar_data:
+                next_event = get_next_event(calendar_data)
+                if next_event:
+                    event_date, event_start_time, event_end_time, event_summary = next_event
+                    speak(f"Your next event is {event_summary} starting at {event_start_time} and ending at {event_end_time}.")
+                else:
+                    speak("You don't have any upcoming events.")
+            else:
+                speak("Failed to fetch calendar events.")
+                
+    speak("Can I help you with anything else?")  # Ask for further assistance
+    response = take_command().lower()  # Check if user needs further assistance
 
-        else:
-            speak("Sorry, I didn't understand that command.")
+# TODO Fix bug that stops taking command input if no response or response given
+    # Wait for response or timeout after 5 seconds
+    start_time = time.time()
+    while time.time() - start_time < 5:
+        if response:
+            time.sleep(0.1)  # Wait for a short time before checking again
+
+    if 'no' in response:
+        speak(get_random_goodbye_message())  # Bid goodbye with a random message
+        continue
+    elif 'yes' in response:
+        speak(get_random_greeting())  # Greet the user again
+        continue  # Restart the loop
+    else:  # Handle case where there's no response
+        speak(get_random_goodbye_message())  # Bid goodbye with a random message
+        continue  # Restart the loop
